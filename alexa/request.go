@@ -9,6 +9,8 @@ const (
 	CancelIntent   = "AMAZON.CancelIntent"
 	StopIntent     = "AMAZON.StopIntent"
 	FallbackIntent = "AMAZON.FallbackIntent"
+	YesIntent      = "AMAZON.YesIntent"
+	NoIntent       = "AMAZON.NoIntent"
 )
 
 const (

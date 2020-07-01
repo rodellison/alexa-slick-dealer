@@ -4,7 +4,9 @@ package alexa
 // https://github.com/arienmalec/alexa-go
 // https://medium.com/@amalec/alexa-skills-with-go-54db0c21e758
 
-import "strings"
+import (
+	"strings"
+)
 
 func NewSimpleResponseWithCard(title string, text string) Response {
 	r := Response{
@@ -48,7 +50,7 @@ func NewRepromptResponse(text string, reprompt string) Response {
 				Text: text,
 			},
 			Reprompt: &Reprompt{
-				OutputSpeech: Payload{
+				OutputSpeech: &Payload{
 					Type: "PlainText",
 					Text: reprompt,
 				},
@@ -59,17 +61,40 @@ func NewRepromptResponse(text string, reprompt string) Response {
 	return r
 }
 
-func NewSSMLResponse(title string, text string) Response {
-	r := Response{
-		Version: "1.0",
-		Body: ResBody{
-			OutputSpeech: &Payload{
-				Type: "SSML",
-				SSML: text,
+func NewSSMLResponse(title string, primaryText string, repromptText string, shouldEndSession bool, sessionDataToSave map[string]interface{}) Response {
+
+	var r Response
+	if shouldEndSession {
+		r = Response{
+			Version: "1.0",
+			Body: ResBody{
+				OutputSpeech: &Payload{
+					Type: "SSML",
+					SSML: primaryText,
+				},
+				ShouldEndSession: true,
 			},
-			ShouldEndSession: true,
-		},
+		}
+	} else {
+		r = Response{
+			SessionAttributes: sessionDataToSave,
+			Version:           "1.0",
+			Body: ResBody{
+				OutputSpeech: &Payload{
+					Type: "SSML",
+					SSML: primaryText,
+				},
+				Reprompt: &Reprompt{
+					OutputSpeech: &Payload{
+						Type: "SSML",
+						SSML: repromptText,
+					},
+				},
+				ShouldEndSession: false,
+			},
+		}
 	}
+
 	return r
 }
 
@@ -135,7 +160,7 @@ type ResBody struct {
 }
 
 type Reprompt struct {
-	OutputSpeech Payload `json:"outputSpeech,omitempty"`
+	OutputSpeech *Payload `json:"outputSpeech,omitempty"`
 }
 
 type Directives struct {

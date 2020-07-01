@@ -1,13 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/nraboy/slick-dealer/alexa"
+	"github.com/rodellison/alexa-slick-dealer/alexa"
 )
 
 type FeedResponse struct {
@@ -40,64 +41,97 @@ func RequestFeed(mode string) (FeedResponse, error) {
 
 func IntentDispatcher(request alexa.Request) alexa.Response {
 	var response alexa.Response
+
 	if request.Body.Type == "LaunchRequest" {
-		response = alexa.NewRepromptResponse("You can ask a question like, get me the front page deals, or give me the popular deals.", "For instructions on what you can say, please say help me.")
+		response = alexa.NewRepromptResponse("Hello!, and welcome to Slick Dealer. You can ask a question like, get me the front page deals, or give me the popular deals.", "For instructions on what you can say, please say help me.")
 	}
 	switch request.Body.Intent.Name {
 	case "FrontpageDealIntent":
-		response = HandleFrontpageDealIntent(request)
+		response = HandleDealIntent(request, "Frontpage", false)
 	case "PopularDealIntent":
-		response = HandlePopularDealIntent(request)
+		response = HandleDealIntent(request, "Popular", false)
+	case alexa.YesIntent:
+		response = HandleDealIntent(request, "", true)
+	case alexa.NoIntent:
+		response = HandleHelpIntent(request)
 	case alexa.HelpIntent:
 		response = HandleHelpIntent(request)
 	case alexa.StopIntent:
 		response = HandleStopIntent(request)
 	case alexa.CancelIntent:
 		response = HandleStopIntent(request)
-	case "AboutIntent":
-		response = HandleAboutIntent(request)
 	case alexa.FallbackIntent:
 		response = HandleHelpIntent(request)
 	}
 	return response
 }
 
-func HandleFrontpageDealIntent(request alexa.Request) alexa.Response {
-	feedResponse, _ := RequestFeed("frontpage")
-	var builder alexa.SSMLBuilder
-	builder.Say("Here are the current frontpage deals:")
-	builder.Pause("1000")
-	for _, item := range feedResponse.Channel.Item {
-		builder.Say(item.Title)
-		builder.Pause("1000")
-	}
-	return alexa.NewSSMLResponse("Frontpage Deals", builder.Build())
-}
+func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool) alexa.Response {
 
-func HandlePopularDealIntent(request alexa.Request) alexa.Response {
-	feedResponse, _ := RequestFeed("popdeals")
-	var builder alexa.SSMLBuilder
-	builder.Say("Here are the current popular deals:")
-	builder.Pause("1000")
-	for _, item := range feedResponse.Channel.Item {
-		builder.Say(item.Title)
-		builder.Pause("1000")
+	var feedResponse FeedResponse
+	var primarybuilder alexa.SSMLBuilder
+	var repromptbuilder alexa.SSMLBuilder
+
+	if resumingPrior {
+
+		incomingSessionAttrs := request.Session.Attributes
+		incomingData, _ :=  json.Marshal(incomingSessionAttrs["dataToSave"])
+		json.Unmarshal(incomingData, &feedResponse)
+
+	} else {
+
+		if dealType == "Frontpage" {
+			feedResponse, _ = RequestFeed("frontpage")
+			primarybuilder.Say("Here are the current Front page deals:")
+		} else {
+			feedResponse, _ = RequestFeed("popdeals")
+			primarybuilder.Say("Here are the current popular deals:")
+		}
+		primarybuilder.Pause("1000")
 	}
-	return alexa.NewSSMLResponse("Popular Deals", builder.Build())
+
+	if len(feedResponse.Channel.Item) > 3 {
+		for j := 0; j < 3; j++ {
+			thisItem := feedResponse.Channel.Item[j]
+			primarybuilder.Say(thisItem.Title)
+			primarybuilder.Pause("1000")
+		}
+
+		repromptString := "Would you like to hear more deals"
+		primarybuilder.Say(repromptString)
+		primarybuilder.Pause("1000")
+
+		repromptbuilder.Say(repromptString)
+		repromptbuilder.Pause("1000")
+
+		//Save session attributes data for reentry, should the user answer yes to 'more' details..
+		feedResponse.Channel.Item = feedResponse.Channel.Item[3:]
+
+		sessAttrData := make(map[string]interface{})
+		sessAttrData["dataToSave"] = feedResponse
+
+		return alexa.NewSSMLResponse(dealType + " Deals", primarybuilder.Build(), repromptbuilder.Build(), false, sessAttrData)
+
+	} else {
+		for _, item := range feedResponse.Channel.Item {
+			primarybuilder.Say(item.Title)
+			primarybuilder.Pause("1000")
+		}
+		primarybuilder.Say("There are no additional deals")
+		primarybuilder.Pause("1000")
+		return alexa.NewSSMLResponse(dealType + " Deals", primarybuilder.Build(), "", true, nil)
+	}
+
 }
 
 func HandleHelpIntent(request alexa.Request) alexa.Response {
 	var builder alexa.SSMLBuilder
-	builder.Say("Here are some of the things you can ask:")
+	builder.Say("OK, Here are some of the things you can ask:")
 	builder.Pause("1000")
-	builder.Say("Give me the frontpage deals.")
+	builder.Say("What are the frontpage deals.")
 	builder.Pause("1000")
-	builder.Say("Give me the popular deals.")
-	return alexa.NewSSMLResponse("Slick Dealer Help", builder.Build())
-}
-
-func HandleAboutIntent(request alexa.Request) alexa.Response {
-	return alexa.NewSimpleResponseWithCard("About", "Slick Dealer was created by Nic Raboy in Tracy, California as an unofficial Slick Deals application.")
+	builder.Say("What are the popular deals.")
+	return alexa.NewSSMLResponse("Slick Dealer Help", builder.Build(), "", true, nil)
 }
 
 func HandleStopIntent(request alexa.Request) alexa.Response {
