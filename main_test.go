@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/rodellison/alexa-slick-dealer/alexa"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -10,7 +11,11 @@ func TestHandleLaunchIntent(t *testing.T) {
 
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "LaunchRequest",
 		},
@@ -27,7 +32,11 @@ func TestHandleFrontpageDealIntent(t *testing.T) {
 	
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "IntentRequest",
 			Intent: alexa.Intent{
@@ -47,7 +56,11 @@ func TestHandleFrontpageDealIntent(t *testing.T) {
 func TestHandlePopularDealIntent(t *testing.T) {
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "IntentRequest",
 			Intent: alexa.Intent{
@@ -67,7 +80,11 @@ func TestHandlePopularDealIntent(t *testing.T) {
 func TestHandleHelpIntent(t *testing.T) {
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "IntentRequest",
 			Intent: alexa.Intent{
@@ -90,6 +107,9 @@ func TestHandleDealResumeDetails(t *testing.T) {
 	theRequest := &alexa.Request{
 		Version: "1.0",
 		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
 			Attributes: sessionAttrData,
 		},
 		Body:    alexa.ReqBody{
@@ -99,7 +119,8 @@ func TestHandleDealResumeDetails(t *testing.T) {
 				Slots: nil,
 			},
 
-		},		Context: alexa.Context{},
+		},
+		Context: alexa.Context{},
 	}
 	response, _ := Handler(*theRequest)
 	assert.NotEmpty(t, response, "The response should not be empty", false)
@@ -110,7 +131,11 @@ func TestHandleNoIntent(t *testing.T) {
 
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "IntentRequest",
 			Intent: alexa.Intent{
@@ -118,7 +143,8 @@ func TestHandleNoIntent(t *testing.T) {
 				Slots: nil,
 			},
 
-		},		Context: alexa.Context{},
+		},
+		Context: alexa.Context{},
 	}
 	response, _ := Handler(*theRequest)
 	assert.NotEmpty(t, response, "The response should not be empty", false)
@@ -128,7 +154,11 @@ func TestHandleNoIntent(t *testing.T) {
 func TestHandleStopIntent(t *testing.T) {
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "IntentRequest",
 			Intent: alexa.Intent{
@@ -146,7 +176,11 @@ func TestHandleCancelIntent(t *testing.T) {
 
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "IntentRequest",
 			Intent: alexa.Intent{
@@ -165,7 +199,11 @@ func TestHandleFallback(t *testing.T) {
 
 	theRequest := &alexa.Request{
 		Version: "1.0",
-		Session: alexa.Session{},
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: os.Getenv("AppARN"),
+			},
+		},
 		Body:    alexa.ReqBody{
 			Type: "IntentRequest",
 			Intent: alexa.Intent{
@@ -178,4 +216,23 @@ func TestHandleFallback(t *testing.T) {
 	response, _ := Handler(*theRequest)
 	assert.NotEmpty(t, response, "The response should not be empty", false)
 	assert.NotEmpty(t, response.Body.OutputSpeech, "There should be output speech")
+}
+
+func TestNotAuthorized(t *testing.T) {
+
+	theRequest := &alexa.Request{
+		Version: "1.0",
+		Session: alexa.Session{
+			Application: alexa.Application{
+				ApplicationID: "SomeIncorrectOrNOARNData",
+			},
+		},
+		Body:    alexa.ReqBody{
+			Type: "LaunchRequest",
+		},
+		Context: alexa.Context{},
+	}
+	response, _ := Handler(*theRequest)
+	assert.NotEmpty(t, response, "The response should not be empty", false)
+	assert.Contains(t, response.Body.OutputSpeech.Text, "Please enable and use this skill through an approved Alexa device.")
 }

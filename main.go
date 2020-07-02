@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"encoding/xml"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/rodellison/alexa-slick-dealer/alexa"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/rodellison/alexa-slick-dealer/alexa"
+	"os"
 )
 
 type FeedResponse struct {
@@ -43,8 +43,9 @@ func IntentDispatcher(request alexa.Request) alexa.Response {
 	var response alexa.Response
 
 	if request.Body.Type == "LaunchRequest" {
-		response = alexa.NewRepromptResponse("Hello!, and welcome to Slick Dealer. You can ask a question like, get me the front page deals, or give me the popular deals.", "For instructions on what you can say, please say help me.")
+		return alexa.NewRepromptResponse("Hello!, and welcome to Slick Dealer. You can ask a question like, get me the front page deals, or give me the popular deals.", "For instructions on what you can say, please say help me.")
 	}
+
 	switch request.Body.Intent.Name {
 	case "FrontpageDealIntent":
 		response = HandleDealIntent(request, "Frontpage", false)
@@ -126,20 +127,32 @@ func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool
 
 func HandleHelpIntent(request alexa.Request) alexa.Response {
 	var builder alexa.SSMLBuilder
+	var repromptBuilder alexa.SSMLBuilder
+
 	builder.Say("OK, Here are some of the things you can ask:")
 	builder.Pause("1000")
 	builder.Say("What are the frontpage deals.")
 	builder.Pause("1000")
 	builder.Say("What are the popular deals.")
-	return alexa.NewSSMLResponse("Slick Dealer Help", builder.Build(), "", true, nil)
+
+	repromptBuilder.Say("Please say, What are the frontpage deals, or What are the popular deals")
+	repromptBuilder.Pause("500")
+	return alexa.NewSSMLResponse("Slick Dealer Help", builder.Build(), repromptBuilder.Build(), false, nil)
 }
 
 func HandleStopIntent(request alexa.Request) alexa.Response {
-	return alexa.NewSimpleResponse("Cancel and Stop", "Goodbye")
+	return alexa.NewSimpleResponse("Cancel and Stop", "Thanks and have a great day!, Goodbye.")
 }
 
 func Handler(request alexa.Request) (alexa.Response, error) {
-	return IntentDispatcher(request), nil
+
+	//Ensure this lambda function/code is invoked through the associated Alexa Skill, and not called directly
+	if request.Session.Application.ApplicationID != os.Getenv("AppARN") {
+		return alexa.NewSimpleResponse("Not authorized", "Please enable and use this skill through an approved Alexa device."), nil
+	} else {
+		return IntentDispatcher(request), nil
+	}
+
 }
 
 func main() {
