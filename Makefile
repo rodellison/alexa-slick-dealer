@@ -1,4 +1,4 @@
-.PHONY: build clean deploy gomodgen
+.PHONY: buildForAWS buildForOSX copyJson clean deploy gomodgen
 
 buildForAWS: gomodgen
 	export GO111MODULE=on
@@ -11,10 +11,14 @@ buildForOSX: gomodgen
 clean:
 	rm -rf ./bin ./vendor Gopkg.lock
 
-test: clean buildForOSX
-	go test -covermode count -coverprofile cover.out ./...
+copyJson:
+	mkdir bin
+	cp apl_template_export.json bin/apl_template_export.json
 
-deploy: clean buildForAWS
+test: clean copyJson buildForOSX
+	go test -v -covermode count -coverprofile cover.out ./...
+
+deploy: clean copyJson buildForAWS
 	sls deploy --verbose
 
 gomodgen:

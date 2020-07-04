@@ -43,7 +43,7 @@ func IntentDispatcher(request alexa.Request) alexa.Response {
 	var response alexa.Response
 
 	if request.Body.Type == "LaunchRequest" {
-		return alexa.NewRepromptResponse("Hello!, and welcome to Slick Dealer. You can ask a question like, get me the front page deals, or give me the popular deals.", "For instructions on what you can say, please say help me.")
+		return HandleLaunchIntent(request)
 	}
 
 	switch request.Body.Intent.Name {
@@ -67,16 +67,50 @@ func IntentDispatcher(request alexa.Request) alexa.Response {
 	return response
 }
 
+func HandleLaunchIntent(request alexa.Request) alexa.Response {
+
+	var primarybuilder alexa.SSMLBuilder
+	var repromptbuilder alexa.SSMLBuilder
+	var response alexa.Response
+
+	primarybuilder.Say("Hello!, and welcome to Slick Dealer. You can ask a question like, What are the frontpage deals, or What are the popular deals.")
+	primarybuilder.Pause("1000")
+	primarybuilder.Say("For instructions on what you can say, please say help me.")
+	repromptbuilder.Say("Please ask a question like, What are the frontpage deals, or What are the popular deals.")
+
+
+	if alexa.SupportsAPL(&request)	{
+		response = alexa.NewAPLAskResponse("Welcome to Slick Dealer",
+			primarybuilder.Build(),
+			repromptbuilder.Build(),
+			"You can ask a question like, What are the front page deals, or What are the popular deals.",
+			false,
+			nil,
+			"Home")
+	} else {
+		response = alexa.NewSimpleAskResponse("Welcome to Slick Dealer",
+			primarybuilder.Build(),
+			repromptbuilder.Build(),
+			"You can ask a question like, What are the front page deals, or What are the popular deals.",
+			false,
+			nil)
+	}
+
+	return response
+
+}
+
 func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool) alexa.Response {
 
 	var feedResponse FeedResponse
 	var primarybuilder alexa.SSMLBuilder
 	var repromptbuilder alexa.SSMLBuilder
+	var sessAttrData map[string]interface{}
 
 	if resumingPrior {
 
 		incomingSessionAttrs := request.Session.Attributes
-		incomingData, _ :=  json.Marshal(incomingSessionAttrs["dataToSave"])
+		incomingData, _ := json.Marshal(incomingSessionAttrs["dataToSave"])
 		json.Unmarshal(incomingData, &feedResponse)
 
 	} else {
@@ -108,48 +142,100 @@ func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool
 		//Save session attributes data for reentry, should the user answer yes to 'more' details..
 		feedResponse.Channel.Item = feedResponse.Channel.Item[3:]
 
-		sessAttrData := make(map[string]interface{})
+		sessAttrData = make(map[string]interface{})
 		sessAttrData["dataToSave"] = feedResponse
-
-		return alexa.NewSSMLResponse(dealType + " Deals", primarybuilder.Build(), repromptbuilder.Build(), false, sessAttrData)
 
 	} else {
 		for _, item := range feedResponse.Channel.Item {
 			primarybuilder.Say(item.Title)
 			primarybuilder.Pause("1000")
 		}
-		primarybuilder.Say("There are no additional deals")
+		sessAttrData = nil
+		primarybuilder.Say("There are no additional deals. Please ask another question like, What are the popular deals or What are the frontpage deals. Say Cancel to exit. ")
 		primarybuilder.Pause("1000")
-		return alexa.NewSSMLResponse(dealType + " Deals", primarybuilder.Build(), "", true, nil)
+	}
+
+	if alexa.SupportsAPL(&request) {
+		return alexa.NewAPLAskResponse(dealType + " Deals",
+			primarybuilder.Build(),
+			repromptbuilder.Build(),
+			"Here are your deals",
+			false,
+			sessAttrData,
+			"ItemsList")
+	} else {
+		return alexa.NewSimpleAskResponse(dealType + " Deals",
+			primarybuilder.Build(),
+			repromptbuilder.Build(),
+			"Here are your deals",
+			false,
+			sessAttrData)
 	}
 
 }
 
 func HandleHelpIntent(request alexa.Request) alexa.Response {
-	var builder alexa.SSMLBuilder
+	var primaryBuilder alexa.SSMLBuilder
 	var repromptBuilder alexa.SSMLBuilder
+	var response alexa.Response
 
-	builder.Say("OK, Here are some of the things you can ask:")
-	builder.Pause("1000")
-	builder.Say("What are the frontpage deals.")
-	builder.Pause("1000")
-	builder.Say("What are the popular deals.")
+	primaryBuilder.Say("OK, Here are some of the things you can ask:")
+	primaryBuilder.Pause("1000")
+	primaryBuilder.Say("What are the frontpage deals or,")
+	primaryBuilder.Pause("500")
+	primaryBuilder.Say("What are the popular deals.")
 
-	repromptBuilder.Say("Please say, What are the frontpage deals, or What are the popular deals")
+	repromptBuilder.Say("Please ask a question like, What are the frontpage deals, or " +
+		"What are the popular deals. Say Cancel if you'd like to quit.")
 	repromptBuilder.Pause("500")
-	return alexa.NewSSMLResponse("Slick Dealer Help", builder.Build(), repromptBuilder.Build(), false, nil)
+
+	if alexa.SupportsAPL(&request) {
+		response = alexa.NewAPLAskResponse("Slick Dealer Help",
+			primaryBuilder.Build(),
+			repromptBuilder.Build(),
+			"Please ask a question like, What are the frontpage deals, or What are the popular deals. You can also say Cancel to exit.",
+			false,
+			nil,
+			"Help")
+	} else {
+		response = alexa.NewSimpleAskResponse("Slick Dealer Help",
+			primaryBuilder.Build(),
+			repromptBuilder.Build(),
+			"Please ask a question like, What are the frontpage deals, or What are the popular deals. You can also say Cancel to exit.",
+			false,
+			nil)
+	}
+
+	return response
 }
 
 func HandleStopIntent(request alexa.Request) alexa.Response {
-	return alexa.NewSimpleResponse("Cancel and Stop", "Thanks and have a great day!, Goodbye.")
+
+	var primarybuilder alexa.SSMLBuilder
+	var response alexa.Response
+
+	primarybuilder.Say("Thanks and have a great day!, Goodbye.")
+	response = alexa.NewSimpleTellResponse(os.Getenv("SkillTitle"),
+		primarybuilder.Build(),
+		"Thanks and have a great day!, Goodbye.",
+		true,
+		nil)
+
+	return response
 }
 
 func Handler(request alexa.Request) (alexa.Response, error) {
 
 	//Ensure this lambda function/code is invoked through the associated Alexa Skill, and not called directly
 	if request.Session.Application.ApplicationID != os.Getenv("AppARN") {
-		return alexa.NewSimpleResponse("Not authorized", "Please enable and use this skill through an approved Alexa device."), nil
-	} else {
+		var primarybuilder alexa.SSMLBuilder
+		primarybuilder.Say("Sorry, not authorized. Please enable and use this skill through an approved Alexa device.")
+		return alexa.NewSimpleTellResponse("Not authorized",
+			primarybuilder.Build(),
+			"Not authorized, Please enable and use this skill through an approved Alexa device.",
+			true,
+			nil), nil
+		} else {
 		return IntentDispatcher(request), nil
 	}
 

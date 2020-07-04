@@ -10,7 +10,7 @@ func TestCheckSupportsAPLWhenInterfacePresent(t *testing.T) {
 	theRequest := &Request{
 		Version: "1.0",
 		Session: Session{},
-		Body:    ReqBody{
+		Body: ReqBody{
 			Type: "LaunchRequest",
 		},
 		Context: Context{
@@ -26,7 +26,7 @@ func TestCheckSupportsAPLWhenInterfacePresent(t *testing.T) {
 		},
 	}
 
-	response := supportsAPL(theRequest.Context)
+	response := SupportsAPL(theRequest)
 	assert.True(t, response, "APL should be present")
 
 }
@@ -36,7 +36,7 @@ func TestCheckSupportsAPLWhenInterfaceNotPresent(t *testing.T) {
 	theRequest := &Request{
 		Version: "1.0",
 		Session: Session{},
-		Body:    ReqBody{
+		Body: ReqBody{
 			Type: "LaunchRequest",
 		},
 		Context: Context{
@@ -48,7 +48,7 @@ func TestCheckSupportsAPLWhenInterfaceNotPresent(t *testing.T) {
 		},
 	}
 
-	response := supportsAPL(theRequest.Context)
+	response := SupportsAPL(theRequest)
 	assert.False(t, response, "APL should not be present")
 
 }

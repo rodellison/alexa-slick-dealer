@@ -33,11 +33,11 @@ type Request struct {
 }
 
 type Session struct {
-	New         bool   `json:"new"`
-	SessionID   string `json:"sessionId"`
-	Application Application `json:"application"`
-	Attributes map[string]interface{} `json:"attributes"`
-	User       struct {
+	New         bool                   `json:"new"`
+	SessionID   string                 `json:"sessionId"`
+	Application Application            `json:"application"`
+	Attributes  map[string]interface{} `json:"attributes"`
+	User        struct {
 		UserID      string `json:"userId"`
 		AccessToken string `json:"accessToken,omitempty"`
 	} `json:"user"`
@@ -75,7 +75,6 @@ type Resolutions struct {
 	} `json:"resolutionsPerAuthority"`
 }
 
-
 type Application struct {
 	ApplicationID string `json:"applicationId,omitempty"`
 }
@@ -85,6 +84,7 @@ type Context struct {
 	//	Viewport Viewport  //to be defined later if needed
 	//	Viewports Viewports   //to be defined if needed
 }
+
 //Example of what comes in the request context section..
 //To see if user's device supports visual display of APL, check for presence of:
 //context.System.device.supportedInterfaces.Alexa.Presentation.APL
@@ -159,11 +159,10 @@ func IsEnglish(locale string) bool {
 	}
 }
 
-func supportsAPL(context Context) bool {
-	if context.System.Device.SupportedInterfaces.APL.Runtime.MaxVersion != "" {
+func SupportsAPL(request *Request) bool {
+	if request.Context.System.Device.SupportedInterfaces.APL.Runtime.MaxVersion != "" {
 		return true
-	} else
-	{
+	} else {
 		return false
 	}
 

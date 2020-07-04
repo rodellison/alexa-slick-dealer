@@ -1,20 +1,18 @@
 package alexa
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 // Modified version of Arien Malec's work
 // https://github.com/arienmalec/alexa-go
 // https://medium.com/@amalec/alexa-skills-with-go-54db0c21e758
 
-
-type SSML struct {
-	text  string
-	pause string
-}
-
-type SSMLBuilder struct {
-	SSML []SSML
-}
+var (
+	//Options include Standard, Simple, LinkAccount, AskForPermissionsConsent
+	CardTypeToUse = "Standard"
+)
 
 type Response struct {
 	Version           string                 `json:"version"`
@@ -36,16 +34,20 @@ type Reprompt struct {
 
 type Directives struct {
 	Type          string         `json:"type,omitempty"`
+	Token         string         `json:"token,omitempty"`
 	SlotToElicit  string         `json:"slotToElicit,omitempty"`
 	UpdatedIntent *UpdatedIntent `json:"UpdatedIntent,omitempty"`
 	PlayBehavior  string         `json:"playBehavior,omitempty"`
-	AudioItem     struct {
-		Stream struct {
-			Token                string `json:"token,omitempty"`
-			URL                  string `json:"url,omitempty"`
-			OffsetInMilliseconds int    `json:"offsetInMilliseconds,omitempty"`
-		} `json:"stream,omitempty"`
-	} `json:"audioItem,omitempty"`
+	//AudioItem     struct {
+	//	Stream struct {
+	//		Token                string `json:"token,omitempty"`
+	//		URL                  string `json:"url,omitempty"`
+	//		OffsetInMilliseconds int    `json:"offsetInMilliseconds,omitempty"`
+	//	} `json:"stream,omitempty"`
+	//} `json:"audioItem,omitempty"`
+	Document    APLDocument    `json:"document,omitempty"`
+	DataSources APLDataSources `json:"datasources,omitempty"`
+	TimeoutType string         `json:"timeoutType,omitempty"`
 }
 
 type UpdatedIntent struct {
@@ -87,112 +89,178 @@ func ParseString(text string) string {
 	return text
 }
 
-func (builder *SSMLBuilder) Say(text string) {
-	text = ParseString(text)
-	builder.SSML = append(builder.SSML, SSML{text: text})
-}
+func getImages() Image {
 
-func (builder *SSMLBuilder) Pause(pause string) {
-	builder.SSML = append(builder.SSML, SSML{pause: pause})
-}
-
-func (builder *SSMLBuilder) Build() string {
-	var response string
-	for index, ssml := range builder.SSML {
-		if ssml.text != "" {
-			response += ssml.text + " "
-		} else if ssml.pause != "" && index != len(builder.SSML)-1 {
-			response += "<break time='" + ssml.pause + "ms'/> "
-		}
+	//Note: The actual image links (ENV, hardcoded, etc.) MUST be https, and not http
+	images := &Image{
+		SmallImageURL: os.Getenv("SmallImg"),
+		LargeImageURL: os.Getenv("LargeImg"),
 	}
-	return "<speak>" + response + "</speak>"
+
+	return *images
 }
 
-func NewSimpleResponseWithCard(title string, text string) Response {
+func NewSimpleTellResponse(title, ssmlPrimaryText, cardText string, endSession bool, sessionDataToSave map[string]interface{}) Response {
+
+	//This version is for non Display oriented Alexa devices (i.e.  Echo, Dot).
 	r := Response{
-		Version: "1.0",
+		Version:           "1.0",
+		SessionAttributes: sessionDataToSave,
 		Body: ResBody{
 			OutputSpeech: &Payload{
-				Type: "PlainText",
-				Text: text,
+				Type: "SSML",
+				SSML: ssmlPrimaryText,
 			},
 			Card: &Payload{
-				Type:    "Simple",
+				Type:    CardTypeToUse,
 				Title:   title,
-				Content: text,
+				Text:    cardText,
+				Content: cardText,
+				Image:   getImages(),
 			},
-			ShouldEndSession: true,
+			ShouldEndSession: endSession,
 		},
 	}
+
 	return r
 }
 
-func NewSimpleResponse(title string, text string) Response {
-	r := Response{
-		Version: "1.0",
-		Body: ResBody{
-			OutputSpeech: &Payload{
-				Type: "PlainText",
-				Text: text,
-			},
-			ShouldEndSession: true,
-		},
-	}
-	return r
-}
+func NewSimpleAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText string, endSession bool, sessionDataToSave map[string]interface{}) Response {
 
-func NewRepromptResponse(text string, reprompt string) Response {
+	//This version is for non Display oriented Alexa devices (i.e.  Echo, Dot).
 	r := Response{
-		Version: "1.0",
+		Version:           "1.0",
+		SessionAttributes: sessionDataToSave,
 		Body: ResBody{
 			OutputSpeech: &Payload{
-				Type: "PlainText",
-				Text: text,
+				Type: "SSML",
+				SSML: ssmlPrimaryText,
 			},
 			Reprompt: &Reprompt{
 				OutputSpeech: &Payload{
-					Type: "PlainText",
-					Text: reprompt,
+					Type: "SSML",
+					SSML: ssmlRepromptText,
 				},
 			},
-			ShouldEndSession: false,
+			Card: &Payload{
+				Type:    CardTypeToUse,
+				Title:   title,
+				Text:    cardText,
+				Content: cardText,
+				Image:   getImages(),
+			},
+			ShouldEndSession: endSession,
 		},
 	}
+
 	return r
 }
 
-func NewSSMLResponse(title string, primaryText string, repromptText string, shouldEndSession bool, sessionDataToSave map[string]interface{}) Response {
+func NewAPLTellResponse(title, ssmlPrimaryText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string) Response {
 
-	var r Response
-	if shouldEndSession {
-		r = Response{
-			Version: "1.0",
-			Body: ResBody{
+	//This version is for APL Display oriented Alexa devices (i.e.  Show, Firestick).
+	myAPLDocData, err := FetchAPL()
+	if err != nil {
+		//If an APL (load or unmarshal error occurred), return the simple version response instead as a fallback
+		return NewSimpleTellResponse(title, ssmlPrimaryText, cardText, endSession, sessionDataToSave)
+	}
+
+	//Now Adjust the Data source properties as needed
+	//This sets which APL layout will be used for displaying content
+	myAPLDocData.APLDataSources.TemplateData.Properties.LayoutToUse = layoutToUse
+
+	switch layoutToUse {
+
+	case "Home":
+		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Welcome to Slick Dealer"
+	case "Help":
+		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Help"
+	case "ItemsList":
+		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Items"
+	}
+
+	APLDirective := make([]Directives, 1)
+	APLDirective[0].Type = "Alexa.Presentation.APL.RenderDocument"
+	APLDirective[0].TimeoutType = "SHORT"
+	APLDirective[0].Document = myAPLDocData.APLDocument
+	APLDirective[0].DataSources = myAPLDocData.APLDataSources
+
+	r := Response{
+		Version:           "1.0",
+		SessionAttributes: sessionDataToSave,
+		Body: ResBody{
+			OutputSpeech: &Payload{
+				Type: "SSML",
+				SSML: ssmlPrimaryText,
+			},
+			Directives: APLDirective,
+			Card: &Payload{
+				Type:    CardTypeToUse,
+				Title:   title,
+				Text:    cardText,
+				Content: cardText,
+				Image:   getImages(),
+			},
+			ShouldEndSession: endSession,
+		},
+	}
+
+	return r
+}
+
+func NewAPLAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string) Response {
+
+	//This version is for APL Display oriented Alexa devices (i.e.  Show, Firestick).
+	myAPLDocData, err := FetchAPL()
+	if err != nil {
+		//If an APL (load or unmarshal error occurred), return the simple version response instead as a fallback
+		return NewSimpleTellResponse(title, ssmlPrimaryText, cardText, endSession, sessionDataToSave)
+	}
+
+	//Now Adjust the Data source properties as needed
+	//This sets which APL layout will be used for displaying content
+	myAPLDocData.APLDataSources.TemplateData.Properties.LayoutToUse = layoutToUse
+
+	switch layoutToUse {
+
+	case "Home":
+		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Welcome to Slick Dealer"
+	case "Help":
+		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Help"
+	case "ItemsList":
+		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Items"
+	}
+
+	APLDirective := make([]Directives, 1)
+	APLDirective[0].Type = "Alexa.Presentation.APL.RenderDocument"
+	APLDirective[0].TimeoutType = "SHORT"
+	APLDirective[0].Document = myAPLDocData.APLDocument
+	APLDirective[0].DataSources = myAPLDocData.APLDataSources
+
+	r := Response{
+		Version:           "1.0",
+		SessionAttributes: sessionDataToSave,
+		Body: ResBody{
+			OutputSpeech: &Payload{
+				Type: "SSML",
+				SSML: ssmlPrimaryText,
+			},
+			Reprompt: &Reprompt{
 				OutputSpeech: &Payload{
 					Type: "SSML",
-					SSML: primaryText,
+					SSML: ssmlRepromptText,
 				},
-				ShouldEndSession: true,
 			},
-		}
-	} else {
-		r = Response{
-			SessionAttributes: sessionDataToSave,
-			Version:           "1.0",
-			Body: ResBody{
-				OutputSpeech: &Payload{
-					Type: "SSML",
-					SSML: primaryText,
-				},
-				Reprompt: &Reprompt{
-					OutputSpeech: &Payload{
-						Type: "SSML",
-						SSML: repromptText,
-					},
-				},
-				ShouldEndSession: false,
+			Directives: APLDirective,
+			Card: &Payload{
+				Type:    CardTypeToUse,
+				Title:   title,
+				Text:    cardText,
+				Content: cardText,
+				Image:   getImages(),
 			},
-		}
+			ShouldEndSession: endSession,
+		},
 	}
 
 	return r
