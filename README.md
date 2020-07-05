@@ -1,14 +1,26 @@
-This Forked version of Nic's code implements some 'enhancements':
-- Inclusion of Session attributes handling
-- New Type/structs for handling Display devices incorporating Alexa Presentation language
+Preface: My intent for forking, and ultimately making modifications to existing skill 
+'Alexa Slick Dealer' is solely to use it as a means for learning how to develop an Alexa Skill using _**golang**_.  
+**I have no intention on  releasing this skill.**  Rather, the modifications made are so that I can have a template
+to use for future skills. 
+
+What's new in this forked version?
+- Type/struct enhancements in Request and Response structs for handling Display devices incorporating 
+Alexa Presentation language.
+- New functions replace the prior 'NewSimpleResponse' to facilitate Ask and Tell type responses'. 
+- Hardcoding of _**ShouldEndSession**_ has been removed to allow for more control. 
 - Functional changes in how the skill delivers data - namely, this version of the skill 
 only says three items at a time, and then asks the user if they want to here more. 
-(Prior the skill would just keep going through possibly dozens
-of deals with no stopping) Session Attribute logic was added to carry forward items fetched
-from the frontpage/popular deals page. 
+(Prior the skill would just keep going through possibly dozens of deals with no stopping) 
+- Session Attribute logic was added to carry forward items fetched from the frontpage/popular deals page. 
 - Changed 'Simple' Card to 'Standard' Card - so as to facilitate display of images in the cards provided
-back during the session
-- More unit tests for additional coverage
+back during the session. Simple cards can still be used if desired by changing the type in the response.go file
+- More complete unit tests for additional coverage
+- Minor MakeFile enhancements to support build/testing on OSX as well as AWS
+- Moved supporting images to a subdir
+
+**NOTE**: included is a 'copy-serverless.yml' which should be renamed to '**serverless.yml**' and adjusted as appropriate
+if this enhanced skill is cloned or used. 
+
 
 
 _______________________
