@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	FetchAPL func() (*APLDocumentAndData, error)
+	FetchAPL   func() (*APLDocumentAndData, error)
 	FileToRead string
 )
 
@@ -68,6 +68,12 @@ type APLDataProperties struct {
 	ItemsText             []string `json:"ItemsText,omitempty"`
 }
 
+//This struct will be used to define a container type for passing custom display data to the NewTell/Ask..Response functions
+//It should be customized as needed to support the data needs of the dynamically updated Datasource APL properties
+type CustomDataToDisplay struct {
+	ItemsListContent []string
+}
+
 func CreateAPLDocAndData() (*APLDocumentAndData, error) {
 
 	aplDoc := &APLDocumentAndData{
@@ -76,7 +82,7 @@ func CreateAPLDocAndData() (*APLDocumentAndData, error) {
 	}
 
 	//apl_template_export.json is the name given to the file downloaded from the Alexa Developer console (Display tool)
-    fmt.Println("Opening APLTemplate JSON file: ", FileToRead)
+	fmt.Println("Opening APLTemplate JSON file: ", FileToRead)
 	file, err := ioutil.ReadFile(FileToRead)
 	if err != nil {
 		fmt.Println("Error reading APL json file: ", err.Error())

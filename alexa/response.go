@@ -156,8 +156,9 @@ func NewSimpleAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText str
 	return r
 }
 
-func NewAPLTellResponse(title, ssmlPrimaryText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string) Response {
+func NewAPLTellResponse(title, ssmlPrimaryText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string, contentToUse interface{}) Response {
 
+	customContent := contentToUse.(CustomDataToDisplay)
 	//This version is for APL Display oriented Alexa devices (i.e.  Show, Firestick).
 	myAPLDocData, err := FetchAPL()
 	if err != nil {
@@ -173,10 +174,15 @@ func NewAPLTellResponse(title, ssmlPrimaryText, cardText string, endSession bool
 
 	case "Home":
 		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Welcome to Slick Dealer"
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[0] = customContent.ItemsListContent[0]
 	case "Help":
 		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Help"
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[0] = customContent.ItemsListContent[0]
 	case "ItemsList":
 		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Items"
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[0] = customContent.ItemsListContent[0]
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[1] = customContent.ItemsListContent[1]
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[2] = customContent.ItemsListContent[2]
 	}
 
 	APLDirective := make([]Directives, 1)
@@ -208,8 +214,9 @@ func NewAPLTellResponse(title, ssmlPrimaryText, cardText string, endSession bool
 	return r
 }
 
-func NewAPLAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string) Response {
+func NewAPLAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string, contentToUse interface{}) Response {
 
+	customContent := contentToUse.(CustomDataToDisplay)
 	//This version is for APL Display oriented Alexa devices (i.e.  Show, Firestick).
 	myAPLDocData, err := FetchAPL()
 	if err != nil {
@@ -225,10 +232,15 @@ func NewAPLAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText string
 
 	case "Home":
 		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Welcome to Slick Dealer"
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[0] = customContent.ItemsListContent[0]
 	case "Help":
 		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Help"
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[0] = customContent.ItemsListContent[0]
 	case "ItemsList":
 		myAPLDocData.APLDataSources.TemplateData.Properties.HeadingText = "Slick Dealer Items"
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[0] = customContent.ItemsListContent[0]
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[1] = customContent.ItemsListContent[1]
+		myAPLDocData.APLDataSources.TemplateData.Properties.ItemsText[2] = customContent.ItemsListContent[2]
 	}
 
 	APLDirective := make([]Directives, 1)

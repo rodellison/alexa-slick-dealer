@@ -69,28 +69,33 @@ func IntentDispatcher(request alexa.Request) alexa.Response {
 
 func HandleLaunchIntent(request alexa.Request) alexa.Response {
 
-	var primarybuilder alexa.SSMLBuilder
-	var repromptbuilder alexa.SSMLBuilder
+	var primarySSMLText alexa.SSMLBuilder
+	var repromptSSMLText alexa.SSMLBuilder
 	var response alexa.Response
 
-	primarybuilder.Say("Hello!, and welcome to Slick Dealer. You can ask a question like, What are the frontpage deals, or What are the popular deals.")
-	primarybuilder.Pause("1000")
-	primarybuilder.Say("For instructions on what you can say, please say help me.")
-	repromptbuilder.Say("Please ask a question like, What are the frontpage deals, or What are the popular deals.")
+	primarySSMLText.Say("Hello!, and welcome to Slick Dealer. You can ask a question like, What are the frontpage deals, or What are the popular deals.")
+	primarySSMLText.Pause("1000")
+	primarySSMLText.Say("For instructions on what you can say, please say help me.")
+	repromptSSMLText.Say("Please ask a question like, What are the frontpage deals, or What are the popular deals.")
 
+	if alexa.SupportsAPL(&request) {
+		customDisplayData := alexa.CustomDataToDisplay{
+			ItemsListContent: make([]string, 3),
+		}
+		customDisplayData.ItemsListContent[0] = "You can ask a question like, What are the front page deals, or What are the popular deals."
 
-	if alexa.SupportsAPL(&request)	{
 		response = alexa.NewAPLAskResponse("Welcome to Slick Dealer",
-			primarybuilder.Build(),
-			repromptbuilder.Build(),
+			primarySSMLText.Build(),
+			repromptSSMLText.Build(),
 			"You can ask a question like, What are the front page deals, or What are the popular deals.",
 			false,
 			nil,
-			"Home")
+			"Home",
+			customDisplayData)
 	} else {
 		response = alexa.NewSimpleAskResponse("Welcome to Slick Dealer",
-			primarybuilder.Build(),
-			repromptbuilder.Build(),
+			primarySSMLText.Build(),
+			repromptSSMLText.Build(),
 			"You can ask a question like, What are the front page deals, or What are the popular deals.",
 			false,
 			nil)
@@ -103,9 +108,10 @@ func HandleLaunchIntent(request alexa.Request) alexa.Response {
 func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool) alexa.Response {
 
 	var feedResponse FeedResponse
-	var primarybuilder alexa.SSMLBuilder
-	var repromptbuilder alexa.SSMLBuilder
+	var primarySSMLText alexa.SSMLBuilder
+	var repromptSSMLText alexa.SSMLBuilder
 	var sessAttrData map[string]interface{}
+	var cardTextContent string
 
 	if resumingPrior {
 
@@ -117,27 +123,38 @@ func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool
 
 		if dealType == "Frontpage" {
 			feedResponse, _ = RequestFeed("frontpage")
-			primarybuilder.Say("Here are the current Front page deals:")
+			primarySSMLText.Say("Here are the current Front page deals:")
+			cardTextContent += "Here are the current Front page deals:\n"
 		} else {
 			feedResponse, _ = RequestFeed("popdeals")
-			primarybuilder.Say("Here are the current popular deals:")
+			primarySSMLText.Say("Here are the current popular deals:")
+			cardTextContent += "Here are the current popular deals:\n"
 		}
-		primarybuilder.Pause("1000")
+		primarySSMLText.Pause("1000")
+	}
+
+	//This variable is setup to hold APL custom Display property content
+	customDisplayData := alexa.CustomDataToDisplay{
+		ItemsListContent: make([]string, 3),
 	}
 
 	if len(feedResponse.Channel.Item) > 3 {
 		for j := 0; j < 3; j++ {
 			thisItem := feedResponse.Channel.Item[j]
-			primarybuilder.Say(thisItem.Title)
-			primarybuilder.Pause("1000")
+			primarySSMLText.Say(thisItem.Title)
+			primarySSMLText.Pause("1000")
+
+			//This variable will store and be used to pass the text/content that needs to be displayed on the APL template
+			customDisplayData.ItemsListContent[j] = thisItem.Title
+			cardTextContent += thisItem.Title + "\n"
 		}
 
 		repromptString := "Would you like to hear more deals"
-		primarybuilder.Say(repromptString)
-		primarybuilder.Pause("1000")
+		primarySSMLText.Say(repromptString)
+		primarySSMLText.Pause("1000")
 
-		repromptbuilder.Say(repromptString)
-		repromptbuilder.Pause("1000")
+		repromptSSMLText.Say(repromptString)
+		repromptSSMLText.Pause("1000")
 
 		//Save session attributes data for reentry, should the user answer yes to 'more' details..
 		feedResponse.Channel.Item = feedResponse.Channel.Item[3:]
@@ -146,28 +163,32 @@ func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool
 		sessAttrData["dataToSave"] = feedResponse
 
 	} else {
-		for _, item := range feedResponse.Channel.Item {
-			primarybuilder.Say(item.Title)
-			primarybuilder.Pause("1000")
+		for idx, item := range feedResponse.Channel.Item {
+			primarySSMLText.Say(item.Title)
+			primarySSMLText.Pause("1000")
+			customDisplayData.ItemsListContent[idx] = item.Title
+			cardTextContent += item.Title + "\n"
 		}
 		sessAttrData = nil
-		primarybuilder.Say("There are no additional deals. Please ask another question like, What are the popular deals or What are the frontpage deals. Say Cancel to exit. ")
-		primarybuilder.Pause("1000")
+		primarySSMLText.Say("There are no additional deals. Please ask another question like, What are the popular deals or What are the frontpage deals. Say Cancel to exit. ")
+		primarySSMLText.Pause("1000")
 	}
 
 	if alexa.SupportsAPL(&request) {
-		return alexa.NewAPLAskResponse(dealType + " Deals",
-			primarybuilder.Build(),
-			repromptbuilder.Build(),
-			"Here are your deals",
+
+		return alexa.NewAPLAskResponse(dealType+" Deals",
+			primarySSMLText.Build(),
+			repromptSSMLText.Build(),
+			cardTextContent,
 			false,
 			sessAttrData,
-			"ItemsList")
+			"ItemsList",
+			customDisplayData)
 	} else {
-		return alexa.NewSimpleAskResponse(dealType + " Deals",
-			primarybuilder.Build(),
-			repromptbuilder.Build(),
-			"Here are your deals",
+		return alexa.NewSimpleAskResponse(dealType+" Deals",
+			primarySSMLText.Build(),
+			repromptSSMLText.Build(),
+			cardTextContent,
 			false,
 			sessAttrData)
 	}
@@ -175,33 +196,41 @@ func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool
 }
 
 func HandleHelpIntent(request alexa.Request) alexa.Response {
-	var primaryBuilder alexa.SSMLBuilder
-	var repromptBuilder alexa.SSMLBuilder
+	var primarySSMLText alexa.SSMLBuilder
+	var repromptSSMLText alexa.SSMLBuilder
 	var response alexa.Response
 
-	primaryBuilder.Say("OK, Here are some of the things you can ask:")
-	primaryBuilder.Pause("1000")
-	primaryBuilder.Say("What are the frontpage deals or,")
-	primaryBuilder.Pause("500")
-	primaryBuilder.Say("What are the popular deals.")
+	primarySSMLText.Say("OK, Here are some of the things you can ask:")
+	primarySSMLText.Pause("1000")
+	primarySSMLText.Say("What are the frontpage deals or,")
+	primarySSMLText.Pause("500")
+	primarySSMLText.Say("What are the popular deals.")
 
-	repromptBuilder.Say("Please ask a question like, What are the frontpage deals, or " +
+	repromptSSMLText.Say("Please ask a question like, What are the frontpage deals, or " +
 		"What are the popular deals. Say Cancel if you'd like to quit.")
-	repromptBuilder.Pause("500")
+	repromptSSMLText.Pause("500")
 
 	if alexa.SupportsAPL(&request) {
+
+		//This variable is setup to hold APL Display content
+		customDisplayData := alexa.CustomDataToDisplay{
+			ItemsListContent: make([]string, 3),
+		}
+		customDisplayData.ItemsListContent[0] = "Please ask a question like, What are the Frontpage deals, or What are the Popular deals. You can also say 'Cancel' to exit."
+
 		response = alexa.NewAPLAskResponse("Slick Dealer Help",
-			primaryBuilder.Build(),
-			repromptBuilder.Build(),
-			"Please ask a question like, What are the frontpage deals, or What are the popular deals. You can also say Cancel to exit.",
+			primarySSMLText.Build(),
+			repromptSSMLText.Build(),
+			"Please ask a question like, What are the Frontpage deals, or What are the Popular deals. You can also say 'Cancel' to exit.",
 			false,
 			nil,
-			"Help")
+			"Help",
+			customDisplayData)
 	} else {
 		response = alexa.NewSimpleAskResponse("Slick Dealer Help",
-			primaryBuilder.Build(),
-			repromptBuilder.Build(),
-			"Please ask a question like, What are the frontpage deals, or What are the popular deals. You can also say Cancel to exit.",
+			primarySSMLText.Build(),
+			repromptSSMLText.Build(),
+			"Please ask a question like, What are the Frontpage deals, or What are the Popular deals. You can also say 'Cancel' to exit.",
 			false,
 			nil)
 	}
@@ -211,12 +240,12 @@ func HandleHelpIntent(request alexa.Request) alexa.Response {
 
 func HandleStopIntent(request alexa.Request) alexa.Response {
 
-	var primarybuilder alexa.SSMLBuilder
+	var primarySSMLText alexa.SSMLBuilder
 	var response alexa.Response
 
-	primarybuilder.Say("Thanks and have a great day!, Goodbye.")
+	primarySSMLText.Say("Thanks and have a great day!, Goodbye.")
 	response = alexa.NewSimpleTellResponse(os.Getenv("SkillTitle"),
-		primarybuilder.Build(),
+		primarySSMLText.Build(),
 		"Thanks and have a great day!, Goodbye.",
 		true,
 		nil)
@@ -235,7 +264,7 @@ func Handler(request alexa.Request) (alexa.Response, error) {
 			"Not authorized, Please enable and use this skill through an approved Alexa device.",
 			true,
 			nil), nil
-		} else {
+	} else {
 		return IntentDispatcher(request), nil
 	}
 

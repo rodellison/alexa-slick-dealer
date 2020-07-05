@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func TestHandleLaunchIntent(t *testing.T) {
 
 	theRequest := &alexa.Request{
@@ -231,11 +230,11 @@ func TestNotAuthorized(t *testing.T) {
 
 func TestHandleHelpIntentWithAPL(t *testing.T) {
 
-    context := alexa.Context{
-    	System: alexa.System{
-			Application:    alexa.Application{},
-			User:           alexa.User{},
-			Device:         alexa.Device{
+	context := alexa.Context{
+		System: alexa.System{
+			Application: alexa.Application{},
+			User:        alexa.User{},
+			Device: alexa.Device{
 				DeviceID: "JustATest",
 				SupportedInterfaces: alexa.SupportedInterfaces{
 					APL: alexa.APL{
@@ -276,9 +275,9 @@ func TestHandleLaunchIntentWithAPL(t *testing.T) {
 
 	context := alexa.Context{
 		System: alexa.System{
-			Application:    alexa.Application{},
-			User:           alexa.User{},
-			Device:         alexa.Device{
+			Application: alexa.Application{},
+			User:        alexa.User{},
+			Device: alexa.Device{
 				DeviceID: "JustATest",
 				SupportedInterfaces: alexa.SupportedInterfaces{
 					APL: alexa.APL{
@@ -315,9 +314,9 @@ func TestHandlePopularDealsIntentWithAPL(t *testing.T) {
 
 	context := alexa.Context{
 		System: alexa.System{
-			Application:    alexa.Application{},
-			User:           alexa.User{},
-			Device:         alexa.Device{
+			Application: alexa.Application{},
+			User:        alexa.User{},
+			Device: alexa.Device{
 				DeviceID: "JustATest",
 				SupportedInterfaces: alexa.SupportedInterfaces{
 					APL: alexa.APL{
