@@ -25,6 +25,8 @@ const (
 	LocaleJapanese          = "ja-JP"
 )
 
+//The Request structure encapsulates other important structs that define the json components that come in as part of a user invoking
+//the Alexa skill.
 type Request struct {
 	Version string  `json:"version"`
 	Session Session `json:"session"`
@@ -32,6 +34,8 @@ type Request struct {
 	Context Context `json:"context"`
 }
 
+//The Session struct is part of the Request, and contains info about the user's session, including who they are and
+//any attributes that are part of the session while it is in progress
 type Session struct {
 	New         bool                   `json:"new"`
 	SessionID   string                 `json:"sessionId"`
@@ -43,6 +47,7 @@ type Session struct {
 	} `json:"user"`
 }
 
+//The Request Body contains information about the Intent the user is asking for
 type ReqBody struct {
 	Type        string `json:"type"`
 	RequestID   string `json:"requestId"`
@@ -53,6 +58,8 @@ type ReqBody struct {
 	DialogState string `json:"dialogState,omitempty"`
 }
 
+//The Intent structure contains the Intent name and any 'Slot' data info that was captured as part of the
+//user invoking the intent on their device. Slots 'fill in the gaps' for the key dynamic parts of the intent
 type Intent struct {
 	Name  string          `json:"name"`
 	Slots map[string]Slot `json:"slots"`
@@ -142,6 +149,7 @@ type Runtime struct {
 	MaxVersion string `json:"maxVersion,omitempty"`
 }
 
+//IsEnglish returns a boolean value if the provided input parm string matches an 'English' oriented constant
 func IsEnglish(locale string) bool {
 	switch locale {
 	case LocaleAmericanEnglish:
@@ -159,6 +167,8 @@ func IsEnglish(locale string) bool {
 	}
 }
 
+//SupportsAPL is for determining if the user is invoking the skill from a display oriented device capable of displaying
+//Alexa Presentation Language content.
 func SupportsAPL(request *Request) bool {
 	if request.Context.System.Device.SupportedInterfaces.APL.Runtime.MaxVersion != "" {
 		return true

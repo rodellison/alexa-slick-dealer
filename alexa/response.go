@@ -14,12 +14,14 @@ var (
 	CardTypeToUse = "Standard"
 )
 
+//The Response structure encapsulates session and body struct data that are returned to the user's device //to reply to their request.
 type Response struct {
 	Version           string                 `json:"version"`
 	SessionAttributes map[string]interface{} `json:"sessionAttributes,omitempty"`
 	Body              ResBody                `json:"response"`
 }
 
+//The Response Body structure is a core component of the Response, encapulating the the actual json components and data that hold the speech or display oriented data returned to the user's device to reply to their request.
 type ResBody struct {
 	OutputSpeech     *Payload     `json:"outputSpeech,omitempty"`
 	Card             *Payload     `json:"card,omitempty"`
@@ -28,23 +30,27 @@ type ResBody struct {
 	ShouldEndSession bool         `json:"shouldEndSession"`
 }
 
+//Reprompt is a small component struct for encapsulating the reprompt portion of speech that will be provided back to the user.
 type Reprompt struct {
 	OutputSpeech *Payload `json:"outputSpeech,omitempty"`
 }
 
+//Directives are a specialized struct for encapsulating data (audio, visual, etc.) that are provided back to the user.
+//This isn't the actual output speech, but rather commands and necessary code for making content 'play' or 'display' on
+//the end user device.
 type Directives struct {
 	Type          string         `json:"type,omitempty"`
 	Token         string         `json:"token,omitempty"`
 	SlotToElicit  string         `json:"slotToElicit,omitempty"`
 	UpdatedIntent *UpdatedIntent `json:"UpdatedIntent,omitempty"`
 	PlayBehavior  string         `json:"playBehavior,omitempty"`
-	//AudioItem     struct {
-	//	Stream struct {
-	//		Token                string `json:"token,omitempty"`
-	//		URL                  string `json:"url,omitempty"`
-	//		OffsetInMilliseconds int    `json:"offsetInMilliseconds,omitempty"`
-	//	} `json:"stream,omitempty"`
-	//} `json:"audioItem,omitempty"`
+	AudioItem     struct {
+		Stream struct {
+			Token                string `json:"token,omitempty"`
+			URL                  string `json:"url,omitempty"`
+			OffsetInMilliseconds int    `json:"offsetInMilliseconds,omitempty"`
+		} `json:"stream,omitempty"`
+	} `json:"audioItem,omitempty"`
 	Document    APLDocument    `json:"document,omitempty"`
 	DataSources APLDataSources `json:"datasources,omitempty"`
 	TimeoutType string         `json:"timeoutType,omitempty"`
@@ -61,6 +67,8 @@ type Image struct {
 	LargeImageURL string `json:"largeImageUrl,omitempty"`
 }
 
+//The Payload struct contains the key data that makes up Output speech, card content, images, etc. One to many of the
+//properties may be included as needed.
 type Payload struct {
 	Type    string `json:"type,omitempty"`
 	Title   string `json:"title,omitempty"`
@@ -71,7 +79,6 @@ type Payload struct {
 }
 
 //Response oriented functions ------------------------------------
-
 func ParseString(text string) string {
 	text = strings.ToLower(text)
 	text = strings.Replace(text, "&", "and", -1)
@@ -89,6 +96,7 @@ func ParseString(text string) string {
 	return text
 }
 
+//Helper function for constructing the Images component used for Response Cards
 func getImages() Image {
 
 	//Note: The actual image links (ENV, hardcoded, etc.) MUST be https, and not http
@@ -100,6 +108,8 @@ func getImages() Image {
 	return *images
 }
 
+//NewSimpleTellResponse constructs a non reprompt oriented Response structure that can be returned to the Alexa user who is NOT using a
+//display capable device. (i.e. Echo, Dot, Tap)
 func NewSimpleTellResponse(title, ssmlPrimaryText, cardText string, endSession bool, sessionDataToSave map[string]interface{}) Response {
 
 	//This version is for non Display oriented Alexa devices (i.e.  Echo, Dot).
@@ -125,6 +135,8 @@ func NewSimpleTellResponse(title, ssmlPrimaryText, cardText string, endSession b
 	return r
 }
 
+//NewSimpleAskResponse constructs a Reprompt oriented Response structure that can be returned to the Alexa user who is NOT using a
+//display capable device. (i.e. Echo, Dot, Tap)
 func NewSimpleAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText string, endSession bool, sessionDataToSave map[string]interface{}) Response {
 
 	//This version is for non Display oriented Alexa devices (i.e.  Echo, Dot).
@@ -156,6 +168,8 @@ func NewSimpleAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText str
 	return r
 }
 
+//NewAPLTellResponse constructs a non reprompt oriented Response structure that can be returned to the Alexa user who IS using a
+//display capable device. (i.e. Show, Firestick)
 func NewAPLTellResponse(title, ssmlPrimaryText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string, contentToUse interface{}) Response {
 
 	customContent := contentToUse.(CustomDataToDisplay)
@@ -214,6 +228,8 @@ func NewAPLTellResponse(title, ssmlPrimaryText, cardText string, endSession bool
 	return r
 }
 
+//NewAPLAskResponse constructs a Reprompt oriented Response structure that can be returned to the Alexa user who IS using a
+//display capable device. (i.e. Show, Firestick)
 func NewAPLAskResponse(title, ssmlPrimaryText, ssmlRepromptText, cardText string, endSession bool, sessionDataToSave map[string]interface{}, layoutToUse string, contentToUse interface{}) Response {
 
 	customContent := contentToUse.(CustomDataToDisplay)

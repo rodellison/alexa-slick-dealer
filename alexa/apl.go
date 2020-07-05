@@ -8,12 +8,15 @@ import (
 )
 
 var (
+	//FetchAPL variable is defined as a func() that returns APLDocumentAndData structure. It is a variable so that it can be overridden for testing purposes
 	FetchAPL   func() (*APLDocumentAndData, error)
 	FileToRead string
 )
 
 func init() {
+	//FetchAPL is initialized to the CreateAPLDocAndData function, but can be overridden or mocked out for testing purposes as needed.
 	FetchAPL = CreateAPLDocAndData
+	//FileToRead is initialized by way of an Environmental variable, but can be overridden as necessary
 	FileToRead = os.Getenv("AplTemplate")
 }
 
@@ -74,6 +77,9 @@ type CustomDataToDisplay struct {
 	ItemsListContent []string
 }
 
+//CreateAPLDocAndData is a function that loads json input that contains the APL template for the Skill. Once loaded, the content
+//is unmarshalled to an overall APLDocAndData structure, where it can then be manipulated in code before inserting into the
+//Response structure which is passed back to the Alexa device.
 func CreateAPLDocAndData() (*APLDocumentAndData, error) {
 
 	aplDoc := &APLDocumentAndData{

@@ -11,6 +11,7 @@ import (
 	"os"
 )
 
+//FeedResponse struct will be used as the type for unmarshalling external HTML data into
 type FeedResponse struct {
 	Channel struct {
 		Item []struct {
@@ -20,6 +21,8 @@ type FeedResponse struct {
 	} `xml:"channel"`
 }
 
+//RequestFeed handles fetching external HTML site data and Unmarhalling to a struct that can be used later
+//within the respective handler functions
 func RequestFeed(mode string) (FeedResponse, error) {
 	endpoint, _ := url.Parse("https://slickdeals.net/newsearch.php")
 	queryParams := endpoint.Query()
@@ -39,6 +42,7 @@ func RequestFeed(mode string) (FeedResponse, error) {
 	}
 }
 
+//Centralized function to steer incoming alexa requests to the appropirate handler function
 func IntentDispatcher(request alexa.Request) alexa.Response {
 	var response alexa.Response
 
@@ -67,6 +71,7 @@ func IntentDispatcher(request alexa.Request) alexa.Response {
 	return response
 }
 
+//Handler function for the initial Launch Request - when someone says.. Alexa, open slick dealer.."
 func HandleLaunchIntent(request alexa.Request) alexa.Response {
 
 	var primarySSMLText alexa.SSMLBuilder
@@ -105,6 +110,9 @@ func HandleLaunchIntent(request alexa.Request) alexa.Response {
 
 }
 
+//Handler function for the both the FrontPage and Popular Deal Intents.
+//Parameters passed allow this function to accommodate both the initial request, as well as subsequent
+//requests as a result of the user saying 'yes' for more data
 func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool) alexa.Response {
 
 	var feedResponse FeedResponse
@@ -195,6 +203,7 @@ func HandleDealIntent(request alexa.Request, dealType string, resumingPrior bool
 
 }
 
+//Handler function for the Help Intent
 func HandleHelpIntent(request alexa.Request) alexa.Response {
 	var primarySSMLText alexa.SSMLBuilder
 	var repromptSSMLText alexa.SSMLBuilder
@@ -238,6 +247,7 @@ func HandleHelpIntent(request alexa.Request) alexa.Response {
 	return response
 }
 
+//Handler function for the Stop and Cancel Intent
 func HandleStopIntent(request alexa.Request) alexa.Response {
 
 	var primarySSMLText alexa.SSMLBuilder
@@ -253,6 +263,8 @@ func HandleStopIntent(request alexa.Request) alexa.Response {
 	return response
 }
 
+//handler() is the first call from the lambda handler, first checking if the caller is a defined 'Alexa Skill - has an ARN we approve', and
+//if so, will proceed
 func Handler(request alexa.Request) (alexa.Response, error) {
 
 	//Ensure this lambda function/code is invoked through the associated Alexa Skill, and not called directly
@@ -270,6 +282,7 @@ func Handler(request alexa.Request) (alexa.Response, error) {
 
 }
 
+//main() is the entry point for the lambda handler
 func main() {
 	lambda.Start(Handler)
 }
