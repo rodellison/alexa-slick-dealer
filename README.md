@@ -1,6 +1,8 @@
+[![rodellison](https://circleci.com/gh/rodellison/alexa-slick-dealer.svg?style=shield)](https://app.circleci.com/pipelines/github/rodellison/alexa-slick-dealer)
+
 Preface: My intent for forking, and ultimately making modifications to existing skill 
-'Alexa Slick Dealer' is solely to use it as a means for learning how to develop an Alexa Skill using _**golang**_.  
-**I have no intention on  releasing this skill.**  Rather, the modifications made are so that I can have a template
+'Alexa Slick Dealer' is solely to use it as a means for learning how to develop an Alexa Skill using _**golang**_ and a little about
+**_CircleCI_** (Continuous Integration).  **I have no intention on  releasing this skill.**  Rather, the modifications made are so that I can have a template
 to use for future skills. 
 
 What's new in this forked version?
