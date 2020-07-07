@@ -16,7 +16,7 @@ copyJson:
 	cp apl_template_export.json bin/apl_template_export.json
 
 test: clean copyJson buildForOSX
-	go test -v -covermode count -coverprofile cover.out ./...
+	go test -v -covermode count ./...
 
 deploy: clean copyJson buildForAWS
 	sls deploy --verbose
