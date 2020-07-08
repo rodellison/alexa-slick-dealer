@@ -44,17 +44,17 @@ jobs:
           command: |
             ls /go/src/github.com/rodellison/alexa-slick-dealer/workspace/apl_template_export.json
       - run:
-          name: Create AWS Credentials file  #AWS Creds to be placed in Environmental Variables
-          command: |
-            mkdir ~/.aws echo -e "[default]\naws_access_key_id=$AWS_ACCESS_KEY_ID_DEFAULT\naws_secret_access_key=$AWS_SECRET_ACCESS_KEY_DEFAULT\n" > ~/.aws/credentials
-
+          name: Create AWS Credentials directory  #AWS Creds to be placed in Environmental Variables
+          command: mkdir ~/.aws
+      - run:
+          name: Format AWS Credentials file  #AWS Creds to be placed in Environmental Variables
+          command: echo -e "[default]\naws_access_key_id=$AWS_ACCESS_KEY_ID_DEFAULT\naws_secret_access_key=$AWS_SECRET_ACCESS_KEY_DEFAULT\n" > ~/.aws/credentials
       - run:
           name: Install Serverless CLI and dependencies
           command: |
             sudo npm i -g serverless
             npm install
             sudo apt-get install awscli  #Note! - AWS creds need to be setup at CircleCI to deploy
-
       - run:
           name: Deploy application
           command: sls deploy --verbose
