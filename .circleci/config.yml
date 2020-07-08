@@ -39,11 +39,11 @@ jobs:
     steps:
       - checkout  #checking out source for serverless content, but not building again..
       - attach_workspace:
-          at: /go/src/github.com/rodellison/alexa-slick-dealer/workspace
+          at: /go/src/github.com/rodellison/alexa-slick-dealer/bin
       - run:
           name: Ensure APL output json is present
           command: |
-            ls /go/src/github.com/rodellison/alexa-slick-dealer/workspace/apl_template_export.json
+            ls /go/src/github.com/rodellison/alexa-slick-dealer/bin/apl_template_export.json
       - run:
           name: Create AWS Credentials directory  #AWS Creds to be placed in Environmental Variables
           command: mkdir ~/.aws
@@ -58,6 +58,8 @@ jobs:
       - run:
           name: Deploy application
           command: |
+            pwd
+            ls -a bin
             sls deploy --verbose
 
 workflows:
