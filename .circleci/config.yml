@@ -3,7 +3,7 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build:
+  build_test:
     docker:
       # specify the version
       - image: circleci/golang:1.9
@@ -13,42 +13,41 @@ jobs:
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/postgres:9.4
 
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
     working_directory: /go/src/github.com/rodellison/alexa-slick-dealer
     steps:
       - checkout
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
-      - run: make buildForAWS
-      - run: cp apl_template_export.json bin/apl_template_export.json
+      - run: make test  #the Makefile test command performs both build and test
       - persist_to_workspace:
           root: bin
           paths:
             - '*'
 
-  test:
+  deploy:
     docker:
       # specify the version
       - image: circleci/golang:1.9
 
     working_directory: /go/src/github.com/rodellison/alexa-slick-dealer
     steps:
+      - run:
+          name: Install Serverless CLI and dependencies
+          command: |
+            sudo npm i -g serverless
+            npm install
       - attach_workspace:
           at: /go/src/github.com/rodellison/alexa-slick-dealer/workspace
-
-
-        # specify any bash command here prefixed with `run: `
       - run: ls /go/src/github.com/rodellison/alexa-slick-dealer/workspace/apl_template_export.json
-      - run: go test -v -covermode count ./...
+      - run:
+          name: Deploy application
+          command: sls deploy --stage dev
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - build
-      - test:
-          requires:
-            - build
+      - build_test
+#      - deploy:
+#          requires:
+#            - build_test
