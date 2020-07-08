@@ -20,7 +20,35 @@ jobs:
     working_directory: /go/src/github.com/rodellison/alexa-slick-dealer
     steps:
       - checkout
-
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
-      - run: make test
+      - run: make buildForAWS
+      - run: cp apl_template_export.json bin/apl_template_export.json
+      - persist_to_workspace:
+          root: bin
+          paths:
+            - '*'
+
+  test:
+    docker:
+      # specify the version
+      - image: circleci/golang:1.9
+
+    working_directory: /go/src/github.com/rodellison/alexa-slick-dealer
+    steps:
+      - attach_workspace:
+          at: /go/src/github.com/rodellison/alexa-slick-dealer/workspace
+
+
+        # specify any bash command here prefixed with `run: `
+      - run: ls /go/src/github.com/rodellison/alexa-slick-dealer/workspace/apl_template_export.json
+      - run: go test -v -covermode count ./...
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
