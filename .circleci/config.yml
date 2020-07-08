@@ -17,8 +17,14 @@ jobs:
     steps:
       - checkout
       # specify any bash command here prefixed with `run: `
-      - run: go get -v -t -d ./...
-      - run: make test  #the Makefile test command performs both build and test
+      - run:
+          name: Get Source dependencies
+          command: |
+            go get -v -t -d ./...
+      - run:   #the Makefile test command performs both build and test
+          name: Build and Test code
+          command: |
+            make test
       - persist_to_workspace:
           root: bin
           paths:
@@ -36,9 +42,14 @@ jobs:
           command: |
             sudo npm i -g serverless
             npm install
+            sudo apt-get install awscli  #Note! - AWS creds need to be setup at CircleCI to deploy
+
       - attach_workspace:
           at: /go/src/github.com/rodellison/alexa-slick-dealer/workspace
-      - run: ls /go/src/github.com/rodellison/alexa-slick-dealer/workspace/apl_template_export.json
+      - run:
+          name: Ensure APL output json is present
+          command: |
+            ls /go/src/github.com/rodellison/alexa-slick-dealer/workspace/apl_template_export.json
       - run:
           name: Deploy application
           command: sls deploy --stage dev
