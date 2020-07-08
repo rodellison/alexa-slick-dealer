@@ -15,7 +15,10 @@ copyJson:
 	mkdir bin
 	cp apl_template_export.json bin/apl_template_export.json
 
-test: clean copyJson buildForOSX
+testOSX: clean copyJson buildForOSX
+	go test -v -covermode count ./...
+
+testAWS: clean copyJson buildForAWS
 	go test -v -covermode count ./...
 
 deploy: clean copyJson buildForAWS
