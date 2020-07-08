@@ -37,6 +37,7 @@ jobs:
 
     working_directory: /go/src/github.com/rodellison/alexa-slick-dealer
     steps:
+      - checkout  #checking out source for serverless content, but not building again..
       - attach_workspace:
           at: /go/src/github.com/rodellison/alexa-slick-dealer/workspace
       - run:
