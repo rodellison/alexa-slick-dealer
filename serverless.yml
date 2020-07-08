@@ -15,14 +15,6 @@ service: alexa-slick-dealer
 # frameworkVersion: "=X.X.X"
 frameworkVersion: '>=1.28.0 <2.0.0'
 
-# A custom variables section for centralizing properties, etc. that need to be referenced throughout this yml.
-custom:
-  ApplicationARN: "<your alexa skills ARN>"
-  APLTemplateJsonFile: "bin/apl_template_export.json"
-  SkillTitle: "Alexa Slick Dealer"
-  SmallImg: "https://<your small image url>/slick-dealer-icon-108.png"
-  LargeImg: "https://<your large image url>/slick-dealer-icon-512.png"
-
 provider:
   name: aws
   runtime: go1.x
@@ -33,6 +25,28 @@ provider:
   # The default is 6 seconds. Note: API Gateway current maximum is 30 seconds
   #timeout: 10
   logRetentionInDays: 30 # Set the default RetentionInDays for a CloudWatch LogGroup
+  # you can ADD statements to the Lambda function's IAM Role (iamRoleStatements) here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "events:PutEvents"
+#      Resource: "arn:aws:events:us-east-1:619676567607:event-bus/conchrepublic"
+#    - Effect: "Allow"
+#      Action:
+#        - dynamodb:Query
+#        - dynamodb:Scan
+#        - dynamodb:GetItem
+#        - dynamodb:PutItem
+#        - dynamodb:UpdateItem
+#        - dynamodb:DeleteItem
+#      Resource: [
+#        "arn:aws:dynamodb:us-east-1:619676567607:table/FloridaKeysEvents",
+#       "arn:aws:dynamodb:us-east-1:619676567607:table/FloridaKeysEventsTest"
+#     ]
+#   - Effect: "Allow"
+#    Action:
+#        - "sns:Publish"
+#      Resource: "arn:aws:sns:*:619676567607:FloridaKeysTableUpdate"
 
 #BY DEFAULT, these logging group/events role statements come built-in
 #    - Effect: "Allow"
@@ -41,6 +55,8 @@ provider:
 #        - "logs:CreateLogGroup"
 #        - "logs:PutLogEvents"
 
+# you can define service wide environment variables here
+#environment:
 
 package:
   exclude:
@@ -53,14 +69,15 @@ functions:
     handler: bin/main
     # Function level environment variables
     environment:
-      #This ENV value used to help secure the Alexa skill backend code, to ensure it can only be invoked
+      #ENV values should be used to provide defaults as well as secure the Alexa skill backend code, to ensure it can only be invoked
       #by our Alexa skill defined in the Developer console
-      AppARN: ${self:custom.ApplicationARN}
-      AplTemplate: ${self:custom.APLTemplateJsonFile}
-      SkillTitle: ${self:custom.SkillTitle}
-      SmallImg: ${self:custom.SmallImg}
-      LargeImg: ${self:custom.LargeImg}
+      AppARN: ${env:AppARN}
+      AplTemplate: ${env:AplTemplate}
+      SkillTitle: ${env:SkillTitle}
+      SmallImg: ${env:SmallImg}
+      LargeImg: ${env:LargeImg}
     events:
       - alexaSkill:
-          appId: ${self:custom.ApplicationARN}
+          appId: ${env:AppARN}
           enabled: true
+

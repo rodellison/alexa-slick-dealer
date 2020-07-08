@@ -20,8 +20,7 @@ back during the session. Simple cards can still be used if desired by changing t
 - Minor MakeFile enhancements to support build/testing on OSX as well as AWS
 - Moved supporting images to a subdir
 
-**NOTE**: included is a 'copy-serverless.yml' which should be renamed to '**serverless.yml**' and adjusted as appropriate
-if this enhanced skill is cloned or used. 
+**NOTE**: '**serverless.yml**' should be adjusted as appropriate if this enhanced skill is cloned or used. 
 
 
 

@@ -57,7 +57,8 @@ jobs:
             sudo apt-get install awscli  #Note! - AWS creds need to be setup at CircleCI to deploy
       - run:
           name: Deploy application
-          command: sls deploy --verbose
+          command: |
+            sls deploy --verbose
 
 workflows:
   version: 2

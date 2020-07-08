@@ -23,7 +23,6 @@ coverage.html
 # Serverless files
 # Don't GIT push the serverless.yml file as it may/likely contains ARNs and other private info
 .serverless/
-serverless.yml
 
 #jetbrains stuff
 .idea/
