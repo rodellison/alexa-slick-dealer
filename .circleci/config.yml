@@ -67,7 +67,7 @@ workflows:
   build_and_test:
     jobs:
       - build_test
-      - hold: # <<< A job that will require manual approval in the CircleCI web application.
+      - hold: # <<< the hold job is a special job that enforces a manual approval in the CircleCI web application.
           type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
           requires: # We only run the "hold" job when build_test has succeeded
             - build_test
@@ -76,4 +76,10 @@ workflows:
       - deploy:
           requires:
             - hold
+          filters:  #ONLY deploy when the workflow is running based on a change to the MASTER branch.. i.e. a pull request merge has occurred, and NOT just a push to any remote development branch..
+            branches:
+              only:
+                - master
+
+
 
